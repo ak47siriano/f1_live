@@ -1,0 +1,175 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Orbitron', sans-serif;
+  background: linear-gradient(135deg, #141e30, #243b55);
+  color: #ffffff;
+  text-align: center;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.navbar ul {
+  display: flex;
+  list-style: none;
+  justify-content: center;
+}
+
+.navbar li {
+  margin: 0 20px;
+}
+
+.navbar a {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1.2rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.navbar a:hover {
+  color: #ffcc00;
+  text-shadow: 0px 0px 10px rgba(255, 204, 0, 0.8);
+}
+
+/* Header */
+.page-header h1 {
+  font-size: 3rem;
+  text-shadow: 0px 0px 15px rgba(255, 204, 0, 0.8);
+}
+
+.neon-text {
+  color: #ffcc00;
+  text-shadow: 0px 0px 10px #ffcc00, 0px 0px 20px #ff9900, 0px 0px 30px #ff6600;
+}
+
+/* Sezioni */
+.content {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Iframe */
+#streamSection iframe {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(255, 204, 0, 0.5);
+}
+
+/* Animazioni */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 1.5s ease-in-out forwards;
+}
+/* Tabelle */
+.leaderboard-table, .calendar-table {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.leaderboard-table thead, .calendar-table thead {
+  background: #ffcc00;
+  color: #000;
+  font-weight: bold;
+}
+
+.leaderboard-table th, .calendar-table th, 
+.leaderboard-table td, .calendar-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.leaderboard-table tr:nth-child(even), .calendar-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Hover sulle righe */
+.leaderboard-table tbody tr:hover, .calendar-table tbody tr:hover {
+  background: rgba(255, 204, 0, 0.3);
+  transition: 0.3s;
+}
+/* Contenitore per affiancare le due classifiche */
+.leaderboard-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+/* Box per ogni classifica */
+.leaderboard-box {
+  flex: 1;
+  min-width: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+/* Tabelle */
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.leaderboard-table thead {
+  background: #ffcc00;
+  color: #000;
+  font-weight: bold;
+}
+
+.leaderboard-table th, .leaderboard-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Hover sulle righe */
+.leaderboard-table tbody tr:hover {
+  background: rgba(255, 204, 0, 0.3);
+  transition: 0.3s;
+}
+
+/* Responsive: impila le classifiche su schermi piccoli */
+@media (max-width: 768px) {
+  .leaderboard-container {
+      flex-direction: column;
+      align-items: center;
+  }
+}

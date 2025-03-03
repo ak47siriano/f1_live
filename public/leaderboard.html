@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Leaderboard - F1 Race</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <ul>
+      <li><a href="live.html"><i class="fa-solid fa-video"></i> Live</a></li>
+      <li><a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a></li>
+      <li><a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-header">
+    <h1 class="neon-text"><i class="fa-solid fa-medal"></i> Leaderboard</h1>
+  </header>
+
+  <!-- Contenitore per le due classifiche affiancate -->
+  <div class="leaderboard-container">
+    <section class="leaderboard-box">
+      <h2>Classifica Piloti</h2>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Pos</th>
+            <th>Pilota</th>
+            <th>Punti</th>
+          </tr>
+        </thead>
+        <tbody id="driversTable"></tbody>
+      </table>
+    </section>
+
+    <section class="leaderboard-box">
+      <h2>Classifica Costruttori</h2>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Pos</th>
+            <th>Team</th>
+            <th>Punti</th>
+          </tr>
+        </thead>
+        <tbody id="constructorsTable"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch('/api/leaderboard');
+        const data = await response.json();
+        
+        const driversTable = document.getElementById('driversTable');
+        const constructorsTable = document.getElementById('constructorsTable');
+
+        driversTable.innerHTML = data.drivers.map(driver => `
+          <tr>
+            <td>${driver.position}</td>
+            <td>${driver.name}</td>
+            <td>${driver.points}</td>
+          </tr>
+        `).join("");
+
+        constructorsTable.innerHTML = data.constructors.map(team => `
+          <tr>
+            <td>${team.position}</td>
+            <td>${team.name}</td>
+            <td>${team.points}</td>
+          </tr>
+        `).join("");
+
+      } catch (error) {
+        console.error("Errore nel recupero della leaderboard:", error);
+      }
+    }
+
+    window.onload = fetchLeaderboard;
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendario - F1 Race</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <ul>
+      <li><a href="live.html"><i class="fa-solid fa-video"></i> Live</a></li>
+      <li><a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a></li>
+      <li><a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-header">
+    <h1 class="neon-text"><i class="fa-solid fa-calendar"></i> Calendario Gare</h1>
+  </header>
+
+  <section class="content">
+    <h2>Prossime Gare</h2>
+    <table class="calendar-table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Circuito</th>
+          <th>Paese</th>
+        </tr>
+      </thead>
+      <tbody id="raceTable"></tbody>
+    </table>
+  </section>
+
+  <script>
+    async function fetchCalendar() {
+      try {
+        const response = await fetch('/api/calendar');
+        const data = await response.json();
+        
+        const raceTable = document.getElementById('raceTable');
+        
+        raceTable.innerHTML = data.races.map(race => `
+          <tr>
+            <td>${race.date}</td>
+            <td>${race.circuitName}</td>
+            <td>${race.country}</td>
+          </tr>
+        `).join("");
+
+      } catch (error) {
+        console.error("Errore nel recupero del calendario:", error);
+      }
+    }
+
+    window.onload = fetchCalendar;
+  </script>
+
+</body>
+</html>
