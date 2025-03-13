@@ -7,54 +7,18 @@ const PORT = process.env.PORT || 3000;
 // Serviamo i file statici dalla cartella "public"
 app.use(express.static('public'));
 
-// Mappatura dei km di pista per alcuni circuiti (da ampliare in base alle esigenze)
-const trackLengthMapping = {
-  'monza': 5.793,
-  'silverstone': 5.891,
-  'catalunya': 4.655
-};
-
 app.get('/api/currentRace', async (req, res) => {
   try {
-    // Otteniamo il prossimo weekend di gara (puoi modificare la logica per selezionare il "live" in base alla data)
+    // Otteniamo il prossimo weekend di gara
     const raceResponse = await axios.get('http://ergast.com/api/f1/current/next.json');
     const race = raceResponse.data.MRData.RaceTable.Races[0];
-
-    // Tentativo di ottenere il miglior giro dalla gara precedente
-    let bestLap = "N/A";
-    try {
-      const lastRaceResponse = await axios.get('http://ergast.com/api/f1/current/last/results.json');
-      const results = lastRaceResponse.data.MRData.RaceTable.Races[0].Results;
-      let fastestTime = Infinity;
-      results.forEach(r => {
-        if (r.FastestLap && r.FastestLap.Time && r.FastestLap.Time.time) {
-          const parts = r.FastestLap.Time.time.split(':');
-          const seconds = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
-          if (seconds < fastestTime) {
-            fastestTime = seconds;
-            bestLap = r.FastestLap.Time.time;
-          }
-        }
-      });
-      if (fastestTime === Infinity) bestLap = "N/A";
-    } catch (e) {
-      bestLap = "N/A";
-    }
-
-    // Determiniamo il track length se disponibile
-    const circuitId = race.Circuit.circuitId;
-    const trackKm = trackLengthMapping[circuitId] || "N/A";
-    // Simuliamo la temperatura (valore casuale tra 20°C e 35°C)
-    const temperature = Math.floor(Math.random() * 16) + 20;
 
     res.json({
       circuit: {
         name: race.Circuit.circuitName,
-        country: race.Circuit.Location.country,
-        trackKm: trackKm,
-        bestLapTime: bestLap
+        country: race.Circuit.Location.country
       },
-      temperature: temperature
+      raceDate: race.date
     });
   } catch (error) {
     console.error(error);
