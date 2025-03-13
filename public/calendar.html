@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendario - F1 Race</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -9,33 +10,88 @@
 </head>
 <body>
 
-  <nav class="navbar">
-    <ul>
-      <li><a href="live.html"><i class="fa-solid fa-video"></i> Live</a></li>
-      <li><a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a></li>
-      <li><a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a></li>
-    </ul>
-  </nav>
+  <div class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fa-solid fa-spinner"></i>
+      <span>Caricamento...</span>
+    </div>
+  </div>
 
-  <header class="page-header">
-    <h1 class="neon-text"><i class="fa-solid fa-calendar"></i> Calendario Gare</h1>
-  </header>
+  <div class="content-container">
+    <div class="container">
+      <nav class="navbar fade-in">
+        <ul>
+          <li><a href="live.html"><i class="fa-solid fa-video"></i> Live</a></li>
+          <li><a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a></li>
+          <li><a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a></li>
+        </ul>
+      </nav>
 
-  <section class="content">
-    <h2>Prossime Gare</h2>
-    <table class="calendar-table">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Circuito</th>
-          <th>Paese</th>
-        </tr>
-      </thead>
-      <tbody id="raceTable"></tbody>
-    </table>
-  </section>
+      <header class="page-header fade-in">
+        <h1><i class="fa-solid fa-calendar"></i> Calendario Gare</h1>
+      </header>
+
+      <section class="content fade-in hover-scale">
+        <h2 class="section-title"><i class="fa-solid fa-flag-checkered"></i> Prossime Gare</h2>
+        <div class="table-container">
+          <table class="calendar-table">
+            <thead>
+              <tr>
+                <th><i class="fa-solid fa-calendar-day"></i> Data</th>
+                <th><i class="fa-solid fa-road"></i> Circuito</th>
+                <th><i class="fa-solid fa-globe"></i> Paese</th>
+              </tr>
+            </thead>
+            <tbody id="raceTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
 
   <script>
+    // Loading management
+    document.addEventListener('DOMContentLoaded', () => {
+      const loadingOverlay = document.querySelector('.loading-overlay');
+      const contentContainer = document.querySelector('.content-container');
+      let loadingTasks = 0;
+
+      function showLoading() {
+        loadingTasks++;
+        loadingOverlay.classList.remove('hidden');
+      }
+
+      function hideLoading() {
+        loadingTasks--;
+        if (loadingTasks <= 0) {
+          loadingTasks = 0;
+          loadingOverlay.classList.add('hidden');
+          contentContainer.classList.add('loaded');
+        }
+      }
+
+      // Intercept all fetch requests to show loading
+      const originalFetch = window.fetch;
+      window.fetch = function() {
+        showLoading();
+        return originalFetch.apply(this, arguments)
+          .then(response => {
+            hideLoading();
+            return response;
+          })
+          .catch(error => {
+            hideLoading();
+            throw error;
+          });
+      }
+
+      // Handle initial page load
+      showLoading();
+      window.addEventListener('load', () => {
+        setTimeout(hideLoading, 500); // Add small delay for smoother transition
+      });
+    });
+
     async function fetchCalendar() {
       try {
         const response = await fetch('/api/calendar');
@@ -43,9 +99,9 @@
         
         const raceTable = document.getElementById('raceTable');
         
-        raceTable.innerHTML = data.races.map(race => `
-          <tr>
-            <td>${race.date}</td>
+        raceTable.innerHTML = data.races.map((race, index) => `
+          <tr class="fade-in" style="animation-delay: ${index * 0.05}s">
+            <td>${formatDate(race.date)}</td>
             <td>${race.circuitName}</td>
             <td>${race.country}</td>
           </tr>
@@ -53,10 +109,27 @@
 
       } catch (error) {
         console.error("Errore nel recupero del calendario:", error);
+        document.getElementById('raceTable').innerHTML = '<tr><td colspan="3"><div class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Errore nel caricamento del calendario</div></td></tr>';
       }
     }
+    
+    // Format date to be more readable
+    function formatDate(dateString) {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('it-IT', options);
+    }
 
-    window.onload = fetchCalendar;
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchCalendar();
+      
+      // Add staggered animation to elements
+      const fadeElements = document.querySelectorAll('.fade-in');
+      fadeElements.forEach((el, index) => {
+        if (!el.style.animationDelay) {
+          el.style.animationDelay = `${index * 0.15}s`;
+        }
+      });
+    });
   </script>
 
 </body>

@@ -2,66 +2,216 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Live - F1 Race</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AK F1 LIVE</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
-  <nav class="navbar">
-    <ul>
-      <li><a href="live.html"><i class="fa-solid fa-video"></i> Live</a></li>
-      <li><a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a></li>
-      <li><a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a></li>
-    </ul>
-  </nav>
+  <div class="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fa-solid fa-spinner"></i>
+      <span>Caricamento...</span>
+    </div>
+  </div>
 
-  <header class="page-header">
-    <h1 class="neon-text"><i class="fa-solid fa-flag-checkered"></i> F1 Live</h1>
-  </header>
+  <div class="content-container">
+    <div class="container">
+      <nav class="navbar fade-in">
+        <ul>
+          <li><a href="live.html"><i class="fa-solid fa-video"></i> Live</a></li>
+          <li><a href="leaderboard.html"><i class="fa-solid fa-trophy"></i> Leaderboard</a></li>
+          <li><a href="calendar.html"><i class="fa-solid fa-calendar-days"></i> Calendar</a></li>
+        </ul>
+      </nav>
 
-  <section id="streamLinkSection" class="content">
-    <label for="streamInput">🔴 Link della Stream:</label>
-    <input type="text" id="streamInput" placeholder="Inserisci il link della stream qui">
-    <button id="updateStreamBtn">Aggiorna Stream</button>
-  </section>
+      <header class="page-header fade-in">
+        <h1><i class="fa-solid fa-flag-checkered"></i> AK F1 LIVE</h1>
+      </header>
 
-  <section id="streamSection" class="content">
-    <iframe id="streamFrame" width="1280" height="720" src="" frameborder="0" allowfullscreen></iframe>
-     </section>
+      <section id="streamLinkSection" class="content fade-in hover-scale">
+        <div class="input-group">
+          <label for="streamInput" class="fade-in"><i class="fa-solid fa-circle-play"></i> Link della Stream:</label>
+          <input type="text" id="streamInput" class="input" placeholder="Inserisci il link della stream qui">
+          <button id="updateStreamBtn" class="button">Aggiorna Stream</button>
+        </div>
+      </section>
 
-  <section id="raceInfo" class="content"></section>
+      <!-- Nuovo contenitore per video e timing affiancati -->
+      <div class="live-container">
+        <section id="streamSection" class="content fade-in">
+          <div class="video-container">
+            <iframe id="streamFrame" width="1280" height="720" src="" frameborder="0" allowfullscreen></iframe>
+          </div>
+        </section>
+
+        <section id="liveTimingSection" class="content fade-in hover-scale">
+          <h2 class="section-title"><i class="fa-solid fa-stopwatch"></i> Live Timing</h2>
+          <div class="table-container">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Num</th>
+                  <th>Pilota</th>
+                  <th>Team</th>
+                  <th>Tempo</th>
+                </tr>
+              </thead>
+              <tbody id="liveTimingTable"></tbody>
+            </table>
+          </div>
+          <div class="refresh-timing">
+            <button id="refreshTimingBtn" class="button"><i class="fa-solid fa-rotate"></i> Aggiorna Timing</button>
+          </div>
+        </section>
+      </div>
+
+      <section id="circuitSection" class="content fade-in hover-scale">
+        <h2 class="section-title"><i class="fa-solid fa-road"></i> Circuito Attuale</h2>
+        <div class="circuit-container">
+          <img id="circuitImage" class="circuit-image fade-in" src="" alt="Circuit layout">
+        </div>
+      </section>
+
+      <section id="raceInfo" class="content fade-in hover-scale">
+        <!-- Race info will be loaded here -->
+      </section>
+    </div>
+  </div>
+
+
 
   <script>
+    // Loading management
+    document.addEventListener('DOMContentLoaded', () => {
+      const loadingOverlay = document.querySelector('.loading-overlay');
+      const contentContainer = document.querySelector('.content-container');
+      let loadingTasks = 0;
+
+      function showLoading() {
+        loadingTasks++;
+        loadingOverlay.classList.remove('hidden');
+      }
+
+      function hideLoading() {
+        loadingTasks--;
+        if (loadingTasks <= 0) {
+          loadingTasks = 0;
+          loadingOverlay.classList.add('hidden');
+          contentContainer.classList.add('loaded');
+        }
+      }
+
+      // Intercept all fetch requests to show loading
+      const originalFetch = window.fetch;
+      window.fetch = function() {
+        showLoading();
+        return originalFetch.apply(this, arguments)
+          .then(response => {
+            hideLoading();
+            return response;
+          })
+          .catch(error => {
+            hideLoading();
+            throw error;
+          });
+      }
+
+      // Handle initial page load
+      showLoading();
+      window.addEventListener('load', () => {
+        setTimeout(hideLoading, 500); // Add small delay for smoother transition
+      });
+    });
+
     async function fetchRaceInfo() {
       try {
+        document.getElementById('raceInfo').innerHTML = '';
+        
         const response = await fetch('/api/currentRace');
         const data = await response.json();
         const raceInfoDiv = document.getElementById('raceInfo');
         raceInfoDiv.innerHTML = `
-          <h2>${data.circuit.name}</h2>
-          <p><i class="fa-solid fa-map-marker-alt"></i> Paese: ${data.circuit.country}</p>
-          <p><i class="fa-solid fa-calendar"></i> Data gara: ${data.raceDate}</p>
+          <h2 class="section-title fade-in">${data.circuit.name}</h2>
+          <div class="info-grid">
+            <p class="info-item fade-in"><i class="fa-solid fa-map-marker-alt"></i> Paese: ${data.circuit.country}</p>
+            <p class="info-item fade-in"><i class="fa-solid fa-calendar"></i> Data gara: ${data.raceDate}</p>
+          </div>
         `;
       } catch (error) {
         console.error("Errore nel recupero delle informazioni sulla gara:", error);
+        document.getElementById('raceInfo').innerHTML = '<div class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Errore nel caricamento delle informazioni</div>';
+      }
+    }
+
+    async function fetchCircuitImage() {
+      try {
+        const response = await fetch('/api/circuitImage');
+        const data = await response.json();
+        
+        const circuitImage = document.getElementById('circuitImage');
+        circuitImage.src = data.circuitImageUrl;
+        circuitImage.alt = `Circuito di ${data.circuitName}`;
+      } catch (error) {
+        console.error("Errore nel recupero dell'immagine del circuito:", error);
+        document.getElementById('circuitSection').innerHTML = '<div class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Errore nel caricamento dell\'immagine del circuito</div>';
+      }
+    }
+
+    async function fetchLiveTiming() {
+      try {
+        const response = await fetch('/api/liveTiming');
+        const data = await response.json();
+        
+        const liveTimingTable = document.getElementById('liveTimingTable');
+        liveTimingTable.innerHTML = data.drivers.map((driver, index) => `
+          <tr class="fade-in" style="animation-delay: ${index * 0.05}s">
+            <td>${driver.position}</td>
+            <td>${driver.number}</td>
+            <td><strong>${driver.code}</strong> ${driver.name}</td>
+            <td>${driver.team}</td>
+            <td>${driver.time}</td>
+          </tr>
+        `).join("");
+      } catch (error) {
+        console.error("Errore nel recupero dei dati di timing:", error);
+        document.getElementById('liveTimingTable').innerHTML = '<tr><td colspan="5"><div class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Errore nel caricamento dei dati di timing</div></td></tr>';
       }
     }
 
     function updateStream(url) {
-      document.getElementById('streamFrame').src = url;
+      const streamFrame = document.getElementById('streamFrame');
+      streamFrame.src = url;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       fetchRaceInfo();
+      fetchCircuitImage();
+      fetchLiveTiming();
       updateStream('https://www.youtube.com/embed/5zRa_ixYkp8');
 
-      const btn = document.getElementById('updateStreamBtn');
-      btn.addEventListener('click', () => {
+      const updateBtn = document.getElementById('updateStreamBtn');
+      updateBtn.addEventListener('click', () => {
         const streamLink = document.getElementById('streamInput').value;
         if (streamLink) updateStream(streamLink);
       });
+
+      const refreshBtn = document.getElementById('refreshTimingBtn');
+      refreshBtn.addEventListener('click', () => {
+        fetchLiveTiming();
+      });
+      
+      // Add staggered animation to elements
+      const fadeElements = document.querySelectorAll('.fade-in');
+      fadeElements.forEach((el, index) => {
+        el.style.animationDelay = `${index * 0.15}s`;
+      });
+
+      // Auto-refresh timing data every 30 seconds
+      setInterval(fetchLiveTiming, 30000);
     });
   </script>
 
