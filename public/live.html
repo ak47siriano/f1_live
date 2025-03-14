@@ -40,7 +40,43 @@
             <iframe id="streamFrame" width="1280" height="720" src="" frameborder="0" allowfullscreen></iframe>
           </div>
         </section>
-
+        <section id="weatherSection" class="content fade-in hover-scale">
+          <h2 class="section-title"><i class="fa-solid fa-cloud"></i> Track Conditions</h2>
+          <div class="weather-info">
+            <div class="weather-grid">
+              <div class="weather-item">
+                <i class="fa-solid fa-temperature-high"></i>
+                <span id="trackTemp">--</span>
+                <small>Track Temp</small>
+              </div>
+              <div class="weather-item">
+                <i class="fa-solid fa-temperature-low"></i>
+                <span id="airTemp">--</span>
+                <small>Air Temp</small>
+              </div>
+              <div class="weather-item">
+                <i class="fa-solid fa-wind"></i>
+                <span id="windSpeed">--</span>
+                <small>Wind Speed</small>
+              </div>
+              <div class="weather-item">
+                <i class="fa-solid fa-compass"></i>
+                <span id="windDir">--</span>
+                <small>Wind Direction</small>
+              </div>
+              <div class="weather-item">
+                <i class="fa-solid fa-droplet"></i>
+                <span id="humidity">--</span>
+                <small>Humidity</small>
+              </div>
+              <div class="weather-item">
+                <i class="fa-solid fa-cloud-rain"></i>
+                <span id="rainfall">--</span>
+                <small>Rainfall</small>
+              </div>
+            </div>
+          </div>
+        </section>
         <section id="liveTimingSection" class="content fade-in hover-scale">
           <h2 class="section-title"><i class="fa-solid fa-stopwatch"></i> Live Timing</h2>
           <div class="table-container">
@@ -51,35 +87,52 @@
                   <th>Num</th>
                   <th>Driver</th>
                   <th>Team</th>
+                  <th>Tyres</th>
                   <th>Speed</th>
                   <th>Telemetry</th>
                 </tr>
               </thead>
+              
               <tbody id="liveTimingTable"></tbody>
             </table>
             
           </div>
-          <div class="refresh-timing">
-            <button id="refreshTimingBtn" class="button"><i class="fa-solid fa-rotate"></i> Aggiorna Timing</button>
-          </div>
         </section>
       </div>
-
-      <section id="circuitSection" class="content fade-in hover-scale">
-        <h2 class="section-title"><i class="fa-solid fa-road"></i> Circuito Attuale</h2>
-        <div class="circuit-container">
-          <img id="circuitImage" class="circuit-image fade-in" src="" alt="Circuit layout">
-        </div>
-      </section>
-
-      <section id="raceInfo" class="content fade-in hover-scale">
-        <!-- Race info will be loaded here -->
-      </section>
     </div>
   
 
   <script>
-
+    async function fetchWeatherData() {
+      try {
+        const response = await fetch('/api/weather');
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const weather = data[0];
+          
+          // Update weather elements
+          document.getElementById('trackTemp').textContent = `${weather.track_temperature}°C`;
+          document.getElementById('airTemp').textContent = `${weather.air_temperature}°C`;
+          document.getElementById('windSpeed').textContent = `${weather.wind_speed} km/h`;
+          document.getElementById('windDir').textContent = `${weather.wind_direction}°`;
+          document.getElementById('humidity').textContent = `${weather.humidity}%`;
+          document.getElementById('rainfall').textContent = `${weather.rainfall} mm`;
+        }
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
+      }
+    }
+    
+    // Add to your existing DOMContentLoaded event listener
+    document.addEventListener('DOMContentLoaded', () => {
+      // ... existing code ...
+      
+      // Initial weather fetch and periodic updates
+      fetchWeatherData();
+      setInterval(fetchWeatherData, 30000); // Update every 30 seconds
+    });
+    
     async function fetchRaceInfo() {
       try {
         document.getElementById('raceInfo').innerHTML = '';
@@ -116,18 +169,31 @@
     async function fetchLiveTiming() {
       const liveTimingTable = document.getElementById('liveTimingTable');
       try {
-        // Fetch live timing data
-        const response = await fetch('/api/liveTiming');
-        const data = await response.json();
+        // Fetch both timing and stint data
+        const [timingResponse, stintsResponse] = await Promise.all([
+          fetch('/api/liveTiming'),
+          fetch('/api/stints')
+        ]);
+        
+        const timingData = await timingResponse.json();
+        const stintsData = await stintsResponse.json();
+    
+        // Create a map of latest stints per driver
+        const driverStints = {};
+        stintsData.forEach(stint => {
+          if (!driverStints[stint.driver_number] || 
+              stint.lap_end > driverStints[stint.driver_number].lap_end) {
+            driverStints[stint.driver_number] = stint;
+          }
+        });
     
         // Clear existing table content
         liveTimingTable.innerHTML = '';
     
-        // Check if data exists
-        if (!data.drivers || data.drivers.length === 0) {
+        if (!timingData.drivers || timingData.drivers.length === 0) {
           liveTimingTable.innerHTML = `
             <tr>
-              <td colspan="6">
+              <td colspan="7">
                 <div class="no-data-message">
                   <i class="fa-solid fa-info-circle"></i>
                   No live timing data available
@@ -137,8 +203,9 @@
           return;
         }
     
-        // Populate table with new data
-        data.drivers.forEach((driver, index) => {
+        // Populate table with combined data
+        timingData.drivers.forEach((driver, index) => {
+          const stint = driverStints[driver.number];
           const row = document.createElement('tr');
           row.classList.add('fade-in');
           row.style.animationDelay = `${index * 0.05}s`;
@@ -151,6 +218,14 @@
               <small>${driver.name}</small>
             </td>
             <td>${driver.team}</td>
+            <td class="tyre-cell">
+              ${stint ? `
+                <span class="tyre ${stint.compound.toLowerCase()}">
+                  ${stint.compound}
+                  <small>(${stint.tyre_age_at_start} laps)</small>
+                </span>
+              ` : 'N/A'}
+            </td>
             <td class="speed-cell">${driver.speed ? `${Math.round(driver.speed)} km/h` : 'N/A'}</td>
             <td>
               <div class="telemetry-details">
@@ -172,10 +247,10 @@
         });
     
       } catch (error) {
-        console.error("Errore nel recupero dei dati del live timing:", error);
+        console.error("Errore nel recupero dei dati:", error);
         liveTimingTable.innerHTML = `
           <tr>
-            <td colspan="6">
+            <td colspan="7">
               <div class="error-message">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 ${error.message || 'Errore nel caricamento dei dati'}
@@ -184,6 +259,7 @@
           </tr>`;
       }
     }
+    
     
     // Helper functions for formatting
     function formatDrsStatus(drs) {

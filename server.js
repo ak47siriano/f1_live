@@ -3,14 +3,14 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+const currentYear = new Date().getFullYear();
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 
 app.get('/api/currentRace', async (req, res) => {
   try {
     // Get the next race weekend for the 2025 season
-    const raceResponse = await axios.get('http://ergast.com/api/f1/2025/next.json');
+    const raceResponse = await axios.get('http://ergast.com/api/f1/${currentYear}/next.json');
     const race = raceResponse.data.MRData.RaceTable.Races[0];
 
     res.json({
@@ -29,14 +29,14 @@ app.get('/api/currentRace', async (req, res) => {
 app.get('/api/leaderboard', async (req, res) => {
   try {
     // Driver standings for the 2025 season
-    const driversResponse = await axios.get('http://ergast.com/api/f1/2025/driverStandings.json');
+    const driversResponse = await axios.get('https://api.jolpi.ca/ergast/f1/${currentYear}/driverstandings/?format=json');
     const drivers = driversResponse.data.MRData.StandingsTable.StandingsLists[0].DriverStandings.map(ds => ({
       position: ds.position,
       name: `${ds.Driver.givenName} ${ds.Driver.familyName}`,
       points: ds.points
     }));
     // Constructor standings for the 2025 season
-    const constructorsResponse = await axios.get('http://ergast.com/api/f1/2025/constructorStandings.json');
+    const constructorsResponse = await axios.get('https://api.jolpi.ca/ergast/f1/${currentYear}/constructorstandings/?format=json');
     const constructors = constructorsResponse.data.MRData.StandingsTable.StandingsLists[0].ConstructorStandings.map(cs => ({
       position: cs.position,
       name: cs.Constructor.name,
@@ -54,7 +54,7 @@ app.get('/api/leaderboard', async (req, res) => {
 
 app.get('/api/calendar', async (req, res) => {
   try {
-    const calendarResponse = await axios.get('http://ergast.com/api/f1/2025.json');
+    const calendarResponse = await axios.get('https://api.jolpi.ca/ergast/f1/${currentYear}/races/?format=json');
     const races = calendarResponse.data.MRData.RaceTable.Races.map(race => ({
       date: race.date,
       circuitName: race.Circuit.circuitName,
@@ -67,27 +67,7 @@ app.get('/api/calendar', async (req, res) => {
   }
 });
 
-app.get('/api/circuitImage', async (req, res) => {
-  try {
-    // Get the current race information for the 2025 season
-    const raceResponse = await axios.get('http://ergast.com/api/f1/2025/next.json');
-    const race = raceResponse.data.MRData.RaceTable.Races[0];
-    
-    // Get the circuit ID
-    const circuitId = race.Circuit.circuitId;
-    
-    // Return the circuit information
-    res.json({
-      circuitId: circuitId,
-      circuitName: race.Circuit.circuitName,
-      // You would typically get this from a real API, but for now we'll use a placeholder
-      circuitImageUrl: `https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/${circuitId}.png.transform/7col/image.png`
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error fetching circuit image' });
-  }
-});
+
 
 app.get('/api/liveTiming', async (req, res) => {
   try {
@@ -234,6 +214,27 @@ app.get('/api/liveTiming', async (req, res) => {
       message: 'Unable to fetch complete timing data. Please try again.',
       timestamp: new Date().toISOString()
     });
+  }
+});
+
+// Aggiungi questa route in server.js
+app.get('/api/stints', async (req, res) => {
+  try {
+    const sessionKey = req.query.session_key || '9165'; // Usa un session_key di default o quello fornito
+    const response = await axios.get(`https://api.openf1.org/v1/stints?session_key=${sessionKey}`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching stint data:', error);
+    res.status(500).json({ error: 'Error fetching stint data' });
+  }
+});
+app.get('/api/weather', async (req, res) => {
+  try {
+    const response = await axios.get('https://api.openf1.org/v1/weather?session_key=latest');
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+    res.status(500).json({ error: 'Error fetching weather data' });
   }
 });
 
