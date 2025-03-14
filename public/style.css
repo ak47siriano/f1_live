@@ -594,6 +594,7 @@ body {
 
 #liveTimingSection {
   margin: 0;
+  width: 170%;
   max-height: 720px;
   overflow-y: auto;
 }
@@ -632,4 +633,151 @@ body {
 .leaderboard-table {
   width: 100%;
   font-size: 0.9em;
+}
+/* Telemetry details styling */
+.telemetry-details {
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.drs-status {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: 3px;
+}
+
+.drs-active {
+  background-color: #00cc33;
+  color: #000;
+}
+
+.drs-detected {
+  background-color: #ffcc00;
+  color: #000;
+}
+
+.drs-off {
+  background-color: #444;
+  color: #ddd;
+}
+
+.speed-cell {
+  font-weight: bold;
+  font-family: 'Orbitron', monospace;
+}
+
+/* Make the live timing table more compact for more data */
+#liveTimingSection .leaderboard-table td {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+#liveTimingSection .leaderboard-table th {
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+/* Responsive adjustments for telemetry */
+@media (max-width: 1200px) {
+  .telemetry-details {
+    font-size: 0.75rem;
+  }
+  
+  #liveTimingSection .leaderboard-table td,
+  #liveTimingSection .leaderboard-table th {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .telemetry-details {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+/* Telemetry specific styles */
+.pedal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9em;
+}
+
+.throttle, .brake {
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.throttle {
+  background-color: #004d00;
+}
+
+.brake {
+  background-color: #4d0000;
+}
+
+.drs-status {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.drs-active {
+  background-color: #00cc33;
+  color: #000;
+}
+
+.drs-detected {
+  background-color: #ffcc00;
+  color: #000;
+}
+
+.drs-off {
+  background-color: #444;
+  color: #ddd;
+}
+
+.speed-cell {
+  font-family: 'Orbitron', monospace;
+  font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .leaderboard-table td,
+  .leaderboard-table th {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+  
+  .pedal-info {
+    font-size: 0.8em;
+  }
+}
+.no-data-message {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+
+.error-message {
+  padding: 15px;
+  background-color: rgba(255, 0, 0, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.error-message i {
+  color: #ff4444;
 }

@@ -10,14 +10,8 @@
 </head>
 <body>
 
-  <div class="loading-overlay">
-    <div class="loading-spinner">
-      <i class="fa-solid fa-spinner"></i>
-      <span>Caricamento...</span>
-    </div>
-  </div>
+ 
 
-  <div class="content-container">
     <div class="container">
       <nav class="navbar fade-in">
         <ul>
@@ -55,13 +49,15 @@
                 <tr>
                   <th>Pos</th>
                   <th>Num</th>
-                  <th>Pilota</th>
+                  <th>Driver</th>
                   <th>Team</th>
-                  <th>Tempo</th>
+                  <th>Speed</th>
+                  <th>Telemetry</th>
                 </tr>
               </thead>
               <tbody id="liveTimingTable"></tbody>
             </table>
+            
           </div>
           <div class="refresh-timing">
             <button id="refreshTimingBtn" class="button"><i class="fa-solid fa-rotate"></i> Aggiorna Timing</button>
@@ -80,52 +76,9 @@
         <!-- Race info will be loaded here -->
       </section>
     </div>
-  </div>
-
-
+  
 
   <script>
-    // Loading management
-    document.addEventListener('DOMContentLoaded', () => {
-      const loadingOverlay = document.querySelector('.loading-overlay');
-      const contentContainer = document.querySelector('.content-container');
-      let loadingTasks = 0;
-
-      function showLoading() {
-        loadingTasks++;
-        loadingOverlay.classList.remove('hidden');
-      }
-
-      function hideLoading() {
-        loadingTasks--;
-        if (loadingTasks <= 0) {
-          loadingTasks = 0;
-          loadingOverlay.classList.add('hidden');
-          contentContainer.classList.add('loaded');
-        }
-      }
-
-      // Intercept all fetch requests to show loading
-      const originalFetch = window.fetch;
-      window.fetch = function() {
-        showLoading();
-        return originalFetch.apply(this, arguments)
-          .then(response => {
-            hideLoading();
-            return response;
-          })
-          .catch(error => {
-            hideLoading();
-            throw error;
-          });
-      }
-
-      // Handle initial page load
-      showLoading();
-      window.addEventListener('load', () => {
-        setTimeout(hideLoading, 500); // Add small delay for smoother transition
-      });
-    });
 
     async function fetchRaceInfo() {
       try {
@@ -160,27 +113,91 @@
         document.getElementById('circuitSection').innerHTML = '<div class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Errore nel caricamento dell\'immagine del circuito</div>';
       }
     }
-
     async function fetchLiveTiming() {
+      const liveTimingTable = document.getElementById('liveTimingTable');
       try {
+        // Fetch live timing data
         const response = await fetch('/api/liveTiming');
         const data = await response.json();
-        
-        const liveTimingTable = document.getElementById('liveTimingTable');
-        liveTimingTable.innerHTML = data.drivers.map((driver, index) => `
-          <tr class="fade-in" style="animation-delay: ${index * 0.05}s">
-            <td>${driver.position}</td>
+    
+        // Clear existing table content
+        liveTimingTable.innerHTML = '';
+    
+        // Check if data exists
+        if (!data.drivers || data.drivers.length === 0) {
+          liveTimingTable.innerHTML = `
+            <tr>
+              <td colspan="6">
+                <div class="no-data-message">
+                  <i class="fa-solid fa-info-circle"></i>
+                  No live timing data available
+                </div>
+              </td>
+            </tr>`;
+          return;
+        }
+    
+        // Populate table with new data
+        data.drivers.forEach((driver, index) => {
+          const row = document.createElement('tr');
+          row.classList.add('fade-in');
+          row.style.animationDelay = `${index * 0.05}s`;
+    
+          row.innerHTML = `
+            <td>${driver.position || '-'}</td>
             <td>${driver.number}</td>
-            <td><strong>${driver.code}</strong> ${driver.name}</td>
+            <td>
+              <strong>${driver.code}</strong>
+              <small>${driver.name}</small>
+            </td>
             <td>${driver.team}</td>
-            <td>${driver.time}</td>
-          </tr>
-        `).join("");
+            <td class="speed-cell">${driver.speed ? `${Math.round(driver.speed)} km/h` : 'N/A'}</td>
+            <td>
+              <div class="telemetry-details">
+                <span class="drs-status ${getDrsStatusClass(driver.drs)}">
+                  DRS: ${formatDrsStatus(driver.drs)}
+                </span>
+                <div class="pedal-info">
+                  <span class="throttle">T: ${driver.throttle ? `${Math.round(driver.throttle)}%` : 'N/A'}</span>
+                  <span class="brake">B: ${driver.brake > 0 ? 'ON' : 'OFF'}</span>
+                </div>
+                <div class="gear-info">
+                  Gear: ${driver.gear === 'N' ? 'N' : driver.gear} | RPM: ${driver.rpm ? Math.round(driver.rpm) : 'N/A'}
+                </div>
+              </div>
+            </td>
+          `;
+    
+          liveTimingTable.appendChild(row);
+        });
+    
       } catch (error) {
-        console.error("Errore nel recupero dei dati di timing:", error);
-        document.getElementById('liveTimingTable').innerHTML = '<tr><td colspan="5"><div class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Errore nel caricamento dei dati di timing</div></td></tr>';
+        console.error("Errore nel recupero dei dati del live timing:", error);
+        liveTimingTable.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="error-message">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                ${error.message || 'Errore nel caricamento dei dati'}
+              </div>
+            </td>
+          </tr>`;
       }
     }
+    
+    // Helper functions for formatting
+    function formatDrsStatus(drs) {
+      if (drs === 8) return 'DETECTED';
+      if (drs === 10 || drs === 12 || drs === 14) return 'ACTIVE';
+      return 'OFF';
+    }
+    
+    function getDrsStatusClass(drs) {
+      if (drs === 10 || drs === 12 || drs === 14) return 'drs-active';
+      if (drs === 8) return 'drs-detected';
+      return 'drs-off';
+    }
+    
 
     function updateStream(url) {
       const streamFrame = document.getElementById('streamFrame');
@@ -188,31 +205,30 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Carica i dati iniziali
       fetchRaceInfo();
       fetchCircuitImage();
       fetchLiveTiming();
       updateStream('https://www.youtube.com/embed/5zRa_ixYkp8');
-
+    
+      // Gestione pulsante aggiornamento stream
       const updateBtn = document.getElementById('updateStreamBtn');
       updateBtn.addEventListener('click', () => {
         const streamLink = document.getElementById('streamInput').value;
         if (streamLink) updateStream(streamLink);
       });
-
+    
+      // Gestione pulsante refresh timing
       const refreshBtn = document.getElementById('refreshTimingBtn');
-      refreshBtn.addEventListener('click', () => {
+      refreshBtn.addEventListener('click', (event) => {
+        event.preventDefault();
         fetchLiveTiming();
       });
-      
-      // Add staggered animation to elements
-      const fadeElements = document.querySelectorAll('.fade-in');
-      fadeElements.forEach((el, index) => {
-        el.style.animationDelay = `${index * 0.15}s`;
-      });
-
-      // Auto-refresh timing data every 30 seconds
-      setInterval(fetchLiveTiming, 30000);
+    
+      // Aggiornamento automatico ogni 15 secondi
+      setInterval(fetchLiveTiming, 15000);
     });
+    
   </script>
 
 </body>

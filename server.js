@@ -4,13 +4,13 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serviamo i file statici dalla cartella "public"
+// Serve static files from the "public" directory
 app.use(express.static('public'));
 
 app.get('/api/currentRace', async (req, res) => {
   try {
-    // Otteniamo il prossimo weekend di gara
-    const raceResponse = await axios.get('http://ergast.com/api/f1/current/next.json');
+    // Get the next race weekend for the 2025 season
+    const raceResponse = await axios.get('http://ergast.com/api/f1/2025/next.json');
     const race = raceResponse.data.MRData.RaceTable.Races[0];
 
     res.json({
@@ -22,21 +22,21 @@ app.get('/api/currentRace', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Errore nel recupero dei dati della gara' });
+    res.status(500).json({ error: 'Error fetching race data' });
   }
 });
 
 app.get('/api/leaderboard', async (req, res) => {
   try {
-    // Classifica piloti
-    const driversResponse = await axios.get('http://ergast.com/api/f1/current/driverStandings.json');
+    // Driver standings for the 2025 season
+    const driversResponse = await axios.get('http://ergast.com/api/f1/2025/driverStandings.json');
     const drivers = driversResponse.data.MRData.StandingsTable.StandingsLists[0].DriverStandings.map(ds => ({
       position: ds.position,
       name: `${ds.Driver.givenName} ${ds.Driver.familyName}`,
       points: ds.points
     }));
-    // Classifica costruttori
-    const constructorsResponse = await axios.get('http://ergast.com/api/f1/current/constructorStandings.json');
+    // Constructor standings for the 2025 season
+    const constructorsResponse = await axios.get('http://ergast.com/api/f1/2025/constructorStandings.json');
     const constructors = constructorsResponse.data.MRData.StandingsTable.StandingsLists[0].ConstructorStandings.map(cs => ({
       position: cs.position,
       name: cs.Constructor.name,
@@ -48,13 +48,13 @@ app.get('/api/leaderboard', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Errore nel recupero della classifica' });
+    res.status(500).json({ error: 'Error fetching leaderboard data' });
   }
 });
 
 app.get('/api/calendar', async (req, res) => {
   try {
-    const calendarResponse = await axios.get('http://ergast.com/api/f1/current.json');
+    const calendarResponse = await axios.get('http://ergast.com/api/f1/2025.json');
     const races = calendarResponse.data.MRData.RaceTable.Races.map(race => ({
       date: race.date,
       circuitName: race.Circuit.circuitName,
@@ -63,18 +63,14 @@ app.get('/api/calendar', async (req, res) => {
     res.json({ races: races });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Errore nel recupero del calendario' });
+    res.status(500).json({ error: 'Error fetching calendar data' });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server in ascolto sulla porta ${PORT}`);
-});
-// Add this new endpoint to server.js
 app.get('/api/circuitImage', async (req, res) => {
   try {
-    // Get the current race information
-    const raceResponse = await axios.get('http://ergast.com/api/f1/current/next.json');
+    // Get the current race information for the 2025 season
+    const raceResponse = await axios.get('http://ergast.com/api/f1/2025/next.json');
     const race = raceResponse.data.MRData.RaceTable.Races[0];
     
     // Get the circuit ID
@@ -89,26 +85,159 @@ app.get('/api/circuitImage', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Errore nel recupero dell\'immagine del circuito' });
+    res.status(500).json({ error: 'Error fetching circuit image' });
   }
 });
 
-// Add this endpoint for live timing data
 app.get('/api/liveTiming', async (req, res) => {
   try {
-    // In a real application, you would fetch this from the F1 API
-    // For now, we'll return mock data
-    const mockDrivers = [
-      { position: "1", number: "1", code: "VER", name: "Max Verstappen", team: "Red Bull Racing", time: "1:32.564" },
-      { position: "2", number: "11", code: "PER", name: "Sergio Perez", team: "Red Bull Racing", time: "1:32.978" },
-      { position: "3", number: "16", code: "LEC", name: "Charles Leclerc", team: "Ferrari", time: "1:33.121" },
-      { position: "4", number: "55", code: "SAI", name: "Carlos Sainz", team: "Ferrari", time: "1:33.245" },
-      { position: "5", number: "44", code: "HAM", name: "Lewis Hamilton", team: "Mercedes", time: "1:33.356" }
-    ];
-    
-    res.json({ drivers: mockDrivers });
+    // Create a custom axios instance with better timeout and retry config
+    const f1ApiClient = axios.create({
+      timeout: 30000, // 30 seconds
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'F1-Timing-App/1.0'
+      },
+      validateStatus: status => status < 500 // Only reject if status >= 500
+    });
+
+    // First try to get session data
+    const sessionsResponse = await f1ApiClient.get('https://api.openf1.org/v1/sessions?session_key=latest')
+      .catch(error => {
+        console.log('Session fetch error:', error.message);
+        // Try with hardcoded session key as fallback
+        return { data: [{ session_key: 0 }] };
+      });
+
+    const sessionKey = sessionsResponse.data[0]?.session_key;
+    console.log('Using session key:', sessionKey);
+
+    if (!sessionKey) {
+      return res.status(404).json({
+        status: 'error',
+        error: 'No session available',
+        message: 'No active F1 session found'
+      });
+    }
+
+    // Try to fetch all data with individual error handling
+    const [driversData, positionData, carData] = await Promise.all([
+      f1ApiClient.get(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`)
+        .then(res => res.data)
+        .catch(error => {
+          console.log('Drivers fetch error:', error.message);
+          return [];
+        }),
+      
+      f1ApiClient.get(`https://api.openf1.org/v1/position?session_key=${sessionKey}`)
+        .then(res => res.data)
+        .catch(error => {
+          console.log('Position fetch error:', error.message);
+          return [];
+        }),
+      
+      f1ApiClient.get(`https://api.openf1.org/v1/car_data?session_key=${sessionKey}`)
+        .then(res => res.data)
+        .catch(error => {
+          console.log('Car data fetch error:', error.message);
+          return [];
+        })
+    ]);
+
+    // Check if we have at least some data
+    if (!driversData.length) {
+      return res.status(404).json({
+        status: 'error',
+        error: 'No data available',
+        message: 'No driver data available for this session'
+      });
+    }
+
+    // Process the data we have
+    const latestPositions = {};
+    const latestCarData = {};
+
+    // Process position data if available
+    if (positionData.length) {
+      positionData.forEach(pos => {
+        if (!latestPositions[pos.driver_number] || 
+            new Date(pos.date) > new Date(latestPositions[pos.driver_number].date)) {
+          latestPositions[pos.driver_number] = {
+            position: pos.position,
+            date: pos.date
+          };
+        }
+      });
+    }
+
+    // Process car data if available
+    if (carData.length) {
+      carData.forEach(data => {
+        if (!latestCarData[data.driver_number] || 
+            new Date(data.date) > new Date(latestCarData[data.driver_number].date)) {
+          latestCarData[data.driver_number] = data;
+        }
+      });
+    }
+
+    // Combine available data
+    const drivers = driversData.map(driver => {
+      const driverNumber = driver.driver_number;
+      const position = latestPositions[driverNumber]?.position || null;
+      const telemetry = latestCarData[driverNumber] || {};
+
+      return {
+        position: position,
+        number: driverNumber,
+        code: driver.name_acronym || '',
+        name: driver.full_name || '',
+        team: driver.team_name || '',
+        speed: telemetry.speed || 0,
+        rpm: telemetry.rpm || 0,
+        throttle: telemetry.throttle || 0,
+        brake: telemetry.brake || 0,
+        gear: telemetry.n_gear || 'N',
+        drs: telemetry.drs || 0,
+        lastUpdate: telemetry.date || new Date().toISOString()
+      };
+    });
+
+    // Sort drivers
+    drivers.sort((a, b) => {
+      if (!a.position) return 1;
+      if (!b.position) return -1;
+      return parseInt(a.position) - parseInt(b.position);
+    });
+
+    // Send response with data availability flags
+    res.json({
+      status: 'success',
+      sessionKey: sessionKey,
+      timestamp: new Date().toISOString(),
+      driversCount: drivers.length,
+      dataAvailability: {
+        positions: positionData.length > 0,
+        telemetry: carData.length > 0
+      },
+      drivers: drivers
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Errore nel recupero dei dati di timing' });
+    console.error("Live timing error:", {
+      message: error.message,
+      cause: error.cause
+    });
+
+    res.status(500).json({
+      status: 'error',
+      error: 'Error fetching live timing data',
+      message: 'Unable to fetch complete timing data. Please try again.',
+      timestamp: new Date().toISOString()
+    });
   }
+});
+
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
