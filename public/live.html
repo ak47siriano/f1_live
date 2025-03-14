@@ -9,7 +9,10 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-
+  <video autoplay muted class="background-video">
+    <source src="/video/intro.mp4" type="video/mp4">
+  </video>
+  
  
 
     <div class="container">
@@ -27,7 +30,7 @@
 
       <section id="streamLinkSection" class="content fade-in hover-scale">
         <div class="input-group">
-          <label for="streamInput" class="fade-in"><i class="fa-solid fa-circle-play"></i> Link della Stream:</label>
+         <label for="streamInput" class="fade-in"><i class="fa-solid fa-circle-play"></i> <a href="https://reddit.formula1stream.cc/watch/formula-1-2025-australia-gp-live-stream">Link della Stream:</a> </a></label>
           <input type="text" id="streamInput" class="input" placeholder="Inserisci il link della stream qui">
           <button id="updateStreamBtn" class="button">Aggiorna Stream</button>
         </div>
@@ -37,7 +40,7 @@
       <div class="live-container">
         <section id="streamSection" class="content fade-in">
           <div class="video-container">
-            <iframe id="streamFrame" width="1280" height="720" src="" frameborder="0" allowfullscreen></iframe>
+            <iframe id="streamFrame" width="1280" height="720" src="" frameborder="0" allow="autoplay" allowfullscreen></iframe>
           </div>
         </section>
         <section id="weatherSection" class="content fade-in hover-scale">
@@ -285,7 +288,7 @@
       fetchRaceInfo();
       fetchCircuitImage();
       fetchLiveTiming();
-      updateStream('https://www.youtube.com/embed/5zRa_ixYkp8');
+      updateStream('https://www.youtube.com/embed/g_YO2Fk__xA');
     
       // Gestione pulsante aggiornamento stream
       const updateBtn = document.getElementById('updateStreamBtn');
@@ -303,9 +306,15 @@
     
       // Aggiornamento automatico ogni 15 secondi
       setInterval(fetchLiveTiming, 15000);
+        // Ensure the video starts autoplay
+  const streamFrame = document.getElementById('streamFrame');
+  streamFrame.src = '/video/intro.mp4?autoplay=1';
+  // Or trigger play programmatically if src is already set
+  streamFrame.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
     });
-    
+
   </script>
 
 </body>
+
 </html>

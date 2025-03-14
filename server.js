@@ -3,14 +3,13 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const currentYear = new Date().getFullYear();
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 
 app.get('/api/currentRace', async (req, res) => {
   try {
     // Get the next race weekend for the 2025 season
-    const raceResponse = await axios.get('http://ergast.com/api/f1/${currentYear}/next.json');
+    const raceResponse = await axios.get('http://ergast.com/api/f1/2025/next.json');
     const race = raceResponse.data.MRData.RaceTable.Races[0];
 
     res.json({
@@ -29,14 +28,14 @@ app.get('/api/currentRace', async (req, res) => {
 app.get('/api/leaderboard', async (req, res) => {
   try {
     // Driver standings for the 2025 season
-    const driversResponse = await axios.get('https://api.jolpi.ca/ergast/f1/${currentYear}/driverstandings/?format=json');
+    const driversResponse = await axios.get('https://api.jolpi.ca/ergast/f1/2025/driverstandings/?format=json');
     const drivers = driversResponse.data.MRData.StandingsTable.StandingsLists[0].DriverStandings.map(ds => ({
       position: ds.position,
       name: `${ds.Driver.givenName} ${ds.Driver.familyName}`,
       points: ds.points
     }));
     // Constructor standings for the 2025 season
-    const constructorsResponse = await axios.get('https://api.jolpi.ca/ergast/f1/${currentYear}/constructorstandings/?format=json');
+    const constructorsResponse = await axios.get('https://api.jolpi.ca/ergast/f1/2025/constructorstandings/?format=json');
     const constructors = constructorsResponse.data.MRData.StandingsTable.StandingsLists[0].ConstructorStandings.map(cs => ({
       position: cs.position,
       name: cs.Constructor.name,
@@ -54,7 +53,7 @@ app.get('/api/leaderboard', async (req, res) => {
 
 app.get('/api/calendar', async (req, res) => {
   try {
-    const calendarResponse = await axios.get('https://api.jolpi.ca/ergast/f1/${currentYear}/races/?format=json');
+    const calendarResponse = await axios.get('https://api.jolpi.ca/ergast/f1/2025/races/?format=json');
     const races = calendarResponse.data.MRData.RaceTable.Races.map(race => ({
       date: race.date,
       circuitName: race.Circuit.circuitName,
