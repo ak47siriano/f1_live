@@ -31,6 +31,7 @@ app.get('/api/currentRace', async (req, res) => {
   }
 });
 
+
 app.get('/api/leaderboard', async (req, res) => {
   try {
     // Driver standings for the 2025 season

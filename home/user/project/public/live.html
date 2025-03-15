@@ -30,7 +30,7 @@
 
       <section id="streamLinkSection" class="content fade-in hover-scale">
         <div class="input-group">
-         <label for="streamInput" class="fade-in"><i class="fa-solid fa-circle-play"></i> <a href="https://reddit.formula1stream.cc/watch/formula-1-2025-australia-gp-live-stream">Link della Stream:</a> </a></label>
+         <label for="streamInput" class="fade-in"><i class="fa-solid fa-circle-play"></i> <a href="https://reddit.formula1stream.cc/" target="_blank">Link della Stream:</a> </a></label>
           <input type="text" id="streamInput" class="input" placeholder="Inserisci il link della stream qui">
           <button id="updateStreamBtn" class="button">Aggiorna Stream</button>
         </div>
@@ -180,15 +180,7 @@
         const timingData = await timingResponse.json();
         const stintsData = await stintsResponse.json();
     
-        // Create a map of latest stints per driver
-        const driverStints = {};
-        stintsData.forEach(stint => {
-          if (!driverStints[stint.driver_number] || 
-              stint.lap_end > driverStints[stint.driver_number].lap_end) {
-            driverStints[stint.driver_number] = stint;
-          }
-        });
-    
+       
         // Clear existing table content
         liveTimingTable.innerHTML = '';
     
@@ -207,7 +199,6 @@
     
         // Populate table with combined data
         timingData.drivers.forEach((driver, index) => {
-          const stint = driverStints[driver.number];
           const row = document.createElement('tr');
           row.classList.add('fade-in');
           row.style.animationDelay = `${index * 0.05}s`;
