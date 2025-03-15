@@ -1,5 +1,5 @@
 {
-    "name": "f1-site",
+    "name": "f1-ak",
     "version": "1.0.0",
     "description": "Sito dinamico F1 con live, leaderboard e calendar",
     "main": "server.js",
