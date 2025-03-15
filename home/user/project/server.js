@@ -1,10 +1,16 @@
 // server.js
-const express = require('express');
-const axios = require('axios');
+import express from 'express';
+import axios from 'axios';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 // Serve static files from the "public" directory
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/currentRace', async (req, res) => {
   try {
@@ -107,14 +113,14 @@ app.get('/api/liveTiming', async (req, res) => {
           console.log('Drivers fetch error:', error.message);
           return [];
         }),
-      
+
       f1ApiClient.get(`https://api.openf1.org/v1/position?session_key=${sessionKey}`)
         .then(res => res.data)
         .catch(error => {
           console.log('Position fetch error:', error.message);
           return [];
         }),
-      
+
       f1ApiClient.get(`https://api.openf1.org/v1/car_data?session_key=${sessionKey}`)
         .then(res => res.data)
         .catch(error => {
@@ -181,6 +187,7 @@ app.get('/api/liveTiming', async (req, res) => {
       };
     });
 
+
     // Sort drivers
     drivers.sort((a, b) => {
       if (!a.position) return 1;
@@ -237,7 +244,10 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
-
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
+
+export default app;
+

@@ -90,7 +90,6 @@
                   <th>Num</th>
                   <th>Driver</th>
                   <th>Team</th>
-                  <th>Tyres</th>
                   <th>Speed</th>
                   <th>Telemetry</th>
                 </tr>
@@ -221,14 +220,6 @@
               <small>${driver.name}</small>
             </td>
             <td>${driver.team}</td>
-            <td class="tyre-cell">
-              ${stint ? `
-                <span class="tyre ${stint.compound.toLowerCase()}">
-                  ${stint.compound}
-                  <small>(${stint.tyre_age_at_start} laps)</small>
-                </span>
-              ` : 'N/A'}
-            </td>
             <td class="speed-cell">${driver.speed ? `${Math.round(driver.speed)} km/h` : 'N/A'}</td>
             <td>
               <div class="telemetry-details">
